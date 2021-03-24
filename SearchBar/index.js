@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import lunr from 'lunr'
-//import Doc1 from '../../docs/create-a-blog-post.md'
+//import Doc1 from '../../../docs/create-a-blog-post.md'
 import ReactDOMServer from 'react-dom/server'
 import md2json from 'md-2-json'
 import html2md from 'html-to-md'
@@ -9,15 +9,17 @@ const path = require('path');
 import useGlobalData from '@docusaurus/useGlobalData';
 import fs from 'fs'
 import ReactMd from 'react-md-file';
-import route from '../../.docusaurus/routes'
-import client from '../../.docusaurus/client-manifest.json'
-import lurnr, {idx as testtt} from './Lurn.js'
+import route from '../../../.docusaurus/routes'
+import client from '../../../.docusaurus/client-manifest.json'
 import classnames from "classnames";
+import styled from 'styled-components'
+import './searchbar.css'
 
 function SearchBar() {
 const [mdPaths, setMdPath] = useState([]);
 const [mdRaws, setMdRaw] = useState([]);
 const [isBarExpanded, setBar] = useState(false);
+const [searchResult, setSearchRes] = useState([]);
 
 function loadSearch() {
 	let origins = Object.keys(client.origins);
@@ -43,14 +45,14 @@ let sites = [];
  let rawHead = isBlog ? routePaths(blogPathEnd) : isSrc ? pathEnd.replace(/(.mdx)|(.md)/, '') : path.replace(/(.mdx)|(.md)/, '') ;
 //console.log('rawHead: ',rawHead);
 //	 console.log(pathEnd);
- let fullPath = '../../'+ path;
+ let fullPath = '../../../'+ path;
   fetch(fullPath).then(res => res.text())
     .then(md => {
       let from = 0;
       let hashAt;	   
       for(let i=0; i < md.length; i++) {
         if (md[i] === '\n'&& md[i+1] !== '\n') {
- let raw = {"head":'', "text": ''};	
+ let raw = {"id": 0, "head":'', "text": ''};	
 
        if (i > hashAt && hashAt === from) {
 	  let strHash = md.slice(from, i);
@@ -81,6 +83,7 @@ rawText = rawText.replace(/(\[)|(\])|([(].+[)])|(<(“[^”]*”|'[^’]*’|[^'
 		raw.head = rawHead;
 		raw.text = rawText;
 //		console.log(raw);
+		raw.id = raws.length === 0 ? 0 : raws.length;		
 	        raws.push(raw);
         from = i + 1;		
 	}
@@ -117,7 +120,7 @@ function routePaths(target) {
 
 function handleSearch(e) { 
  const idx = lunr(function() {
-this.ref('head');
+this.ref('id');
 this.field('text');
 this.metadataWhitelist = ['position'];
 //console.log('hook: ',mdPaths)
@@ -125,26 +128,55 @@ mdRaws.forEach(function(raw) {
 this.add(raw);
 }, this);	
 });
-let result = idx.search(e.target.value)	
+let results = idx.search(e.target.value)	
 console.log(idx.search(e.target.value));
-  if(result.length >0) {
+  if(results.length >0) {
   setBar(true);
+  setSearchRes(results);	  
   } else {
   setBar(false);
   }
 
 let expanded = document.querySelector('.search-bar-expanded');
 let dropdown = document.querySelector('.dropdown');
+let navSearch = document.querySelector('.navbar__search');
   if (expanded !== null) {
-expanded.appendChild()
+dropdown.style.display = 'block';
+navSearch.style.position = 'relative';	  
+  results.forEach(result => {
+  let rawIdx = parseInt(result.ref);
+  let aTag = document.createElement('a');	  
+  let tr = document.createElement('tr');
+  tr.className = 'result-raw';	  
+  let header = document.createElement('td');
+  header.className = 'result-raw-td';	  
+  header.style.width = '150px';	 
+  let data = document.createElement('td');	  
+  data.className = 'result-raw-td';	  
+  let rawHead = mdRaws[rawIdx].head;
+  aTag.href = '/' + rawHead;	  
+  let headTitle = rawHead.split('/');
+  headTitle = headTitle[headTitle.length - 1];
+  headTitle = headTitle.indexOf('-') !== -1 ? headTitle.replace('-', ' ') : headTitle;	  
+	  console.log(headTitle);
+  let rawText = mdRaws[rawIdx].text;
+  header.innerText = headTitle;
+  data.innerText = rawText;
+  aTag.appendChild(header);
+  aTag.appendChild(data);
+  tr.appendChild(aTag);
+  dropdown.appendChild(tr);	  
+  })	  
+	  console.log(mdRaws);
   }
 console.log(expanded);	
+dropdown.style.display = 'hide';
 }
 
 function test() {
 
 //console.log(raws)
- let docs = '../../blog/2019-05-28-hola.md';  	
+ let docs = '../../../blog/2019-05-28-hola.md';  	
 //  fetch(docs).then(res => res.text())
 //	.then(data => console.log(data))
 //  let str = ReactDOMServer.renderToString(<Doc1/>);
@@ -192,7 +224,7 @@ let jsn = md2json.parse('dd');
         onMouseOver={loadSearch}
 	onChange={handleSearch}
       />
-	<span class={classnames("hide", "dropdown")}>hello</span>
+	<span className={classnames("hide", "dropdown")}></span>
     </div>
 }
 
