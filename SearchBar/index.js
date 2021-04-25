@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import lunr from 'lunr'
-//import Doc1 from '../../../docs/create-a-blog-post.md'
-import ReactDOMServer from 'react-dom/server'
-import md2json from 'md-2-json'
-import html2md from 'html-to-md'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-const path = require('path');
 import useGlobalData from '@docusaurus/useGlobalData';
-import fs from 'fs'
-import ReactMd from 'react-md-file';
 import route from '../../../.docusaurus/routes'
 import client from '../../../.docusaurus/client-manifest.json'
 import classnames from "classnames";
-import styled from 'styled-components'
 import './searchbar.css'
 
 function SearchBar() {
@@ -21,7 +13,9 @@ const [mdRaws, setMdRaw] = useState([]);
 const [isBarExpanded, setBar] = useState(false);
 const [searchResult, setSearchRes] = useState([]);
 
-function loadSearch() {
+// This loads paths to parse .md or .mdx format files to search
+function loadSearch() {	
+//	console.log('mdRaws length: ',mdRaws.length)
 	let origins = Object.keys(client.origins);
 let sites = [];	
   origins.forEach(site => {
@@ -45,6 +39,7 @@ let sites = [];
  let rawHead = isBlog ? routePaths(blogPathEnd) : isSrc ? pathEnd.replace(/(.mdx)|(.md)/, '') : path.replace(/(.mdx)|(.md)/, '') ;
 //console.log('rawHead: ',rawHead);
 //	 console.log(pathEnd);
+//	console.log('path: ',path)
  let fullPath = '../../../'+ path;
   fetch(fullPath).then(res => res.text())
     .then(md => {
@@ -82,7 +77,7 @@ let sites = [];
 rawText = rawText.replace(/(\[)|(\])|([(].+[)])|(<(“[^”]*”|'[^’]*’|[^'”>])*>)|(\n)|([{]\s?#+.+[}])/g, '');
 		raw.head = rawHead;
 		raw.text = rawText;
-//		console.log(raw);
+//		console.log('raw: ',raw);
 		raw.id = raws.length === 0 ? 0 : raws.length;		
 	        raws.push(raw);
         from = i + 1;		
@@ -99,7 +94,9 @@ rawText = rawText.replace(/(\[)|(\])|([(].+[)])|(<(“[^”]*”|'[^’]*’|[^'
 	setMdRaw(raws);
 //	 console.log('effect: ', raws);
 }
-	
+
+//This loads paths of blogs for parsing .md or .mdx
+//blog md files have date in the name which can't parsed with loadSearch function
 function routePaths(target) {
   let paths = [];
   let path;	
@@ -118,7 +115,11 @@ function routePaths(target) {
   return path;
 }
 
-function handleSearch(e) { 
+//This making search when keywords on search bar tag are put
+//by putting values this makes lunr find results at parsed .md files
+//and set results on React state
+function handleSearch(e) {
+  setSearchRes([]);	  
  const idx = lunr(function() {
 this.ref('id');
 this.field('text');
@@ -128,14 +129,14 @@ mdRaws.forEach(function(raw) {
 this.add(raw);
 }, this);	
 });
-let results = idx.search(e.target.value)	
-console.log(idx.search(e.target.value));
-  if(results.length >0) {
-  setBar(true);
-  setSearchRes(results);	  
-  } else {
-  setBar(false);
-  }
+let results = e.target.value !== "" ? idx.search(e.target.value) : [];
+//console.log(idx.search(e.target.value));
+//console.log('search result: ', searchResult);
+//  let resultRaw = document.querySelector('.result-raw');
+//		resultRaw.remove();		
+
+setBar(true);
+setSearchRes(results);	  
 
 let expanded = document.querySelector('.search-bar-expanded');
 let dropdown = document.querySelector('.dropdown');
@@ -143,63 +144,12 @@ let navSearch = document.querySelector('.navbar__search');
   if (expanded !== null) {
 dropdown.style.display = 'block';
 navSearch.style.position = 'relative';	  
-  results.forEach(result => {
-  let rawIdx = parseInt(result.ref);
-  let aTag = document.createElement('a');	  
-  let tr = document.createElement('tr');
-  tr.className = 'result-raw';	  
-  let header = document.createElement('td');
-  header.className = 'result-raw-td';	  
-  header.style.width = '150px';	 
-  let data = document.createElement('td');	  
-  data.className = 'result-raw-td';	  
-  let rawHead = mdRaws[rawIdx].head;
-  aTag.href = '/' + rawHead;	  
-  let headTitle = rawHead.split('/');
-  headTitle = headTitle[headTitle.length - 1];
-  headTitle = headTitle.indexOf('-') !== -1 ? headTitle.replace('-', ' ') : headTitle;	  
-	  console.log(headTitle);
-  let rawText = mdRaws[rawIdx].text;
-  header.innerText = headTitle;
-  data.innerText = rawText;
-  aTag.appendChild(header);
-  aTag.appendChild(data);
-  tr.appendChild(aTag);
-  dropdown.appendChild(tr);	  
-  })	  
-	  console.log(mdRaws);
+	  
+//	  console.log(mdRaws);
   }
-console.log(expanded);	
+//console.log(expanded);	
 dropdown.style.display = 'hide';
 }
-
-function test() {
-
-//console.log(raws)
- let docs = '../../../blog/2019-05-28-hola.md';  	
-//  fetch(docs).then(res => res.text())
-//	.then(data => console.log(data))
-//  let str = ReactDOMServer.renderToString(<Doc1/>);
-//  const md = html2md(str, {emptyTags:['code', 'blockquote']});
-/*
-  let idx = lunr(function () {
-  this.ref('name')
-  this.field('text')
-  this.metadataWhitelist = ['position'];
-  let arrMd = md.split('\n');
-  arrMd.forEach(data => {
-	  let obj = {name: 'd', text: data}
-	  this.add(obj);
-  })
- });
-	*/
-//	  console.log(md);
-//  let arrMd = md.split('\n');
-//console.log(arrMd);
-let jsn = md2json.parse('dd');
-//	  console.log(jsn);
-//  console.log(idx.search("Greetings"));  	  
-  }
 
     return <div className="navbar__search" key="search-box">
       <span
@@ -220,11 +170,35 @@ let jsn = md2json.parse('dd');
           { "search-bar-expanded": isBarExpanded },
           { "search-bar": !isBarExpanded }
         )}
-	onClick={loadSearch}
-        onMouseOver={loadSearch}
+	onClick={(e) => mdRaws.length === 0 ? loadSearch(e) : ""}
+        onMouseOver={(e) => mdRaws.length === 0 ? loadSearch(e) : ""}
 	onChange={handleSearch}
       />
-	<span className={classnames("hide", "dropdown")}></span>
+	<table className={"search-table"}>
+	<tbody className={classnames("hide", "dropdown")}>
+	{  searchResult.map((result, id) => {
+  //This showing lists from state of search results		
+  let rawIdx = parseInt(result.ref);
+  let rawHead = mdRaws[rawIdx].head;
+  let headTitle = rawHead.split('/');
+  headTitle = headTitle[headTitle.length - 1];
+  headTitle = headTitle.indexOf('-') !== -1 ? headTitle.replace('-', ' ') : headTitle;	  
+	  console.log(headTitle);
+  let rawText = mdRaws[rawIdx].text;
+
+    return <tr className={"result-raw"} onClick={() => {window.location.href='/' + rawHead}} key={id}>
+	       <td className={"result-td-header"}>
+	         <p> {headTitle}
+		 </p>			
+	       </td>	
+	       <td className={"result-td-data"}>
+		 <p> {rawText}
+		 </p>			
+	       </td>			
+           </tr>		
+	})}	  
+</tbody>
+</table>	
     </div>
 }
 

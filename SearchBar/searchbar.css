@@ -1,3 +1,11 @@
+.navbar__search{
+margin-left: 10px;
+}
+
+.search-table {
+margin-bottom: 0;
+}
+
 .dropdown {
     border-radius: 4px;
     margin: 6px -300px 0;
@@ -20,14 +28,33 @@
 
 }
 
-.result-raw:hover {
-  background: #c5cbd3;
-}
-
 .result-raw-td {
   padding : 10px;
   color: black;
 }
 
-.result-raw:hover .result-raw-td {
+.result-td-header {
+  width: 20%;
+
 }
+
+.result-td-data {
+  width: 80%;
+  background: white;
+}
+
+.result-raw:hover{
+  background: #c5cbd3;
+  cursor: pointer;
+}
+
+.dropdown tr td p {
+  overflow: hidden;	
+  text-overflow: ellipsis;
+  margin-bottom: 0;
+}
+
+.dropdown tr td:first-child p {
+  width: 150px;
+}
+
